@@ -134,7 +134,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
-    gs.ecs.insert(new_map());
+    gs.ecs.insert(new_map_test());
     gs.ecs
         .create_entity()
         .with(Position { x: 20, y: 5 })
