@@ -11,6 +11,9 @@ pub use map::*;
 mod player;
 pub use player::*;
 
+mod rect;
+pub use rect::Rect;
+
 pub struct State {
     ecs: World,
 }
@@ -64,10 +67,16 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
-    gs.ecs.insert(new_map_test());
+    let (rooms, map) = new_map_rooms_and_corridors();
+    gs.ecs.insert(map);
+
+    let (player_x, player_y) = rooms[0].center();
     gs.ecs
         .create_entity()
-        .with(Position { x: 20, y: 5 })
+        .with(Position {
+            x: player_x,
+            y: player_y,
+        })
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::RED),
