@@ -1,6 +1,5 @@
 use rltk::{GameState, Rltk, RGB};
 use specs::prelude::*;
-use specs_derive::*;
 
 mod components;
 pub use components::*;
@@ -27,8 +26,7 @@ impl GameState for State {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
 
-        let map = self.ecs.fetch::<Vec<TileType>>();
-        draw_map(&map, ctx);
+        draw_map(&self.ecs, ctx);
         for (pos, render) in (&positions, &renderables).join() {
             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph);
         }
@@ -37,26 +35,7 @@ impl GameState for State {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut lw = LeftWalker {};
-        lw.run_now(&self.ecs);
         self.ecs.maintain();
-    }
-}
-
-#[derive(Component)]
-struct LeftMover {}
-
-struct LeftWalker {}
-impl<'a> System<'a> for LeftWalker {
-    type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
-
-    fn run(&mut self, (lefty, mut pos): Self::SystemData) {
-        for (_lefty, pos) in (&lefty, &mut pos).join() {
-            pos.x -= 1;
-            if pos.x < 0 {
-                pos.x = 79;
-            }
-        }
     }
 }
 
@@ -65,12 +44,13 @@ fn main() -> rltk::BError {
 
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
-    gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
-    let (rooms, map) = new_map_rooms_and_corridors();
+
+    let map: Map = Map::new_map_rooms_and_corridors();
+    let (player_x, player_y) = map.rooms[0].center();
+
     gs.ecs.insert(map);
 
-    let (player_x, player_y) = rooms[0].center();
     gs.ecs
         .create_entity()
         .with(Position {
