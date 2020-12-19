@@ -1,5 +1,5 @@
-use super::Rect;
-use rltk::{RandomNumberGenerator, Rltk, RGB};
+use super::{Player, Rect, Viewshed};
+use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator, Rltk, RGB};
 use specs::prelude::*;
 use std::cmp::{max, min};
 
@@ -15,6 +15,8 @@ pub struct Map {
     pub rooms: Vec<Rect>,
     pub width: i32,
     pub height: i32,
+    pub revealed_tiles: Vec<bool>,
+    pub visible_tiles: Vec<bool>,
 }
 
 impl Map {
@@ -56,6 +58,8 @@ impl Map {
             rooms: Vec::new(),
             width: 80,
             height: 50,
+            revealed_tiles: vec![false; 80 * 50],
+            visible_tiles: vec![false; 80 * 50],
         };
         const MAX_ROOMS: i32 = 30;
         const MIN_SIZE: i32 = 6;
@@ -93,67 +97,44 @@ impl Map {
     }
 }
 
-pub fn xy_idx(x: i32, y: i32) -> usize {
-    (y as usize * 80) + x as usize
+impl Algorithm2D for Map {
+    fn dimensions(&self) -> Point {
+        Point::new(self.width, self.height)
+    }
 }
 
-/// Makes a map with solid boundaries and 400 randomly placed walls.
-/// No guarantees that it wont look awful.
-pub fn new_map_test() -> Vec<TileType> {
-    let mut map = vec![TileType::Floor; 80 * 50];
-
-    for x in 0..80 {
-        map[xy_idx(x, 0)] = TileType::Wall;
-        map[xy_idx(x, 49)] = TileType::Wall;
+impl BaseMap for Map {
+    fn is_opaque(&self, idx: usize) -> bool {
+        self.tiles[idx as usize] == TileType::Wall
     }
-
-    for y in 0..50 {
-        map[xy_idx(0, y)] = TileType::Wall;
-        map[xy_idx(79, y)] = TileType::Wall;
-    }
-
-    let mut rng = rltk::RandomNumberGenerator::new();
-
-    for _i in 0..400 {
-        let x = rng.roll_dice(1, 79);
-        let y = rng.roll_dice(1, 49);
-
-        let idx = xy_idx(x, y);
-        if idx != xy_idx(40, 25) {
-            map[idx] = TileType::Wall;
-        }
-    }
-
-    map
 }
 
 pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
 
-    let mut y = 0;
     let mut x = 0;
-    for (idx, tile) in map.tiles.iter().enumerate() {
-        match tile {
-            TileType::Floor => {
-                ctx.set(
-                    x,
-                    y,
-                    RGB::from_f32(0.5, 0.5, 0.5),
-                    RGB::from_f32(0., 0., 0.),
-                    rltk::to_cp437('.'),
-                );
-            }
-            TileType::Wall => {
-                ctx.set(
-                    x,
-                    y,
-                    RGB::from_f32(0.0, 1.0, 0.0),
-                    RGB::from_f32(0., 0., 0.),
-                    rltk::to_cp437('#'),
-                );
-            }
-        }
+    let mut y = 0;
 
+    for (idx, tile) in map.tiles.iter().enumerate() {
+        let glyph;
+        let mut fg;
+        if map.revealed_tiles[idx] {
+            match tile {
+                TileType::Floor => {
+                    glyph = rltk::to_cp437('.');
+                    fg = RGB::from_f32(0.0, 0.5, 0.5);
+                }
+                TileType::Wall => {
+                    glyph = rltk::to_cp437('#');
+                    fg = RGB::from_f32(0., 1.0, 0.);
+                }
+            }
+            if !map.visible_tiles[idx] {
+                fg = fg.to_greyscale()
+            }
+            ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
+        }
+        // Move the coordinates
         x += 1;
         if x > 79 {
             x = 0;
