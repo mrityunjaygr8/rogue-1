@@ -21,9 +21,9 @@ pub struct Map {
     pub tile_content: Vec<Vec<Entity>>,
 }
 
-const MAPWIDTH: usize = 80;
-const MAPHEIGHT: usize = 43;
-const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
+pub const MAPWIDTH: usize = 80;
+pub const MAPHEIGHT: usize = 43;
+pub const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
 
 impl Map {
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
