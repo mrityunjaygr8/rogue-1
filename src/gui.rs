@@ -1,7 +1,7 @@
 use super::{
-    gamelog::GameLog, CombatStats, InBackpack, Map, Name, Player, Point, Position, State, Viewshed,
+    gamelog::GameLog, CombatStats, InBackpack, Map, Name, Player, Position, State, Viewshed,
 };
-use rltk::{Rltk, VirtualKeyCode, RGB};
+use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
