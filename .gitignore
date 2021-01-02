@@ -2,3 +2,5 @@ wasm/
 
 target/
 
+
+savegame.json
