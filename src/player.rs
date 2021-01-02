@@ -1,6 +1,6 @@
 use super::RunState;
 use super::{
-    gamelog::GameLog, CombatStats, Item, Map, Player, Point, Position, State, Viewshed,
+    gamelog::GameLog, CombatStats, Item, Map, Player, Point, Position, State, TileType, Viewshed,
     WantsToMelee, WantstoPickupItem,
 };
 use rltk::{Rltk, VirtualKeyCode};
@@ -80,6 +80,22 @@ fn get_item(ecs: &mut World) {
     }
 }
 
+pub fn try_next_level(ecs: &mut World) -> bool {
+    let player_pos = ecs.fetch::<Point>();
+    let map = ecs.fetch::<Map>();
+    let player_idx = map.xy_idx(player_pos.x, player_pos.y);
+
+    if map.tiles[player_idx] == TileType::DownStairs {
+        return true;
+    } else {
+        let mut gamelog = ecs.fetch_mut::<GameLog>();
+        gamelog
+            .entries
+            .push("There is no way down from here".to_string());
+        return false;
+    }
+}
+
 pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     match ctx.key {
         None => return RunState::AwaitingInput,
@@ -108,6 +124,11 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             VirtualKeyCode::I => return RunState::ShowInventory,
             VirtualKeyCode::D => return RunState::ShowDropItem,
             VirtualKeyCode::Escape => return RunState::SaveGame,
+            VirtualKeyCode::Period => {
+                if try_next_level(&mut gs.ecs) {
+                    return RunState::NextLevel;
+                }
+            }
             _ => return RunState::AwaitingInput,
         },
     }
