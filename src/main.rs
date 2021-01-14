@@ -37,6 +37,7 @@ mod particle_system;
 
 mod gamelog;
 mod gui;
+mod hunger_system;
 pub mod saveload_system;
 
 mod random_table;
@@ -276,6 +277,7 @@ impl State {
         let mut drop_system = ItemDropSystem {};
         let mut remove_system = ItemRemoveSystem {};
         let mut particle_spawner = particle_system::ParticleSpawnSystem {};
+        let mut hunger_system = hunger_system::HungerSystem {};
         vis.run_now(&self.ecs);
         mob.run_now(&self.ecs);
         mapindex.run_now(&self.ecs);
@@ -286,6 +288,7 @@ impl State {
         drop_system.run_now(&self.ecs);
         remove_system.run_now(&self.ecs);
         particle_spawner.run_now(&self.ecs);
+        hunger_system.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -457,6 +460,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<DefenseBonus>();
     gs.ecs.register::<WantsToRemoveItem>();
     gs.ecs.register::<ParticleLifetime>();
+    gs.ecs.register::<HungerClock>();
+    gs.ecs.register::<ProvidesFood>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
     gs.ecs.insert(particle_system::ParticleBuilder::new());
