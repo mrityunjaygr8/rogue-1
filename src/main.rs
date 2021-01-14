@@ -33,6 +33,8 @@ pub use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSyste
 mod damage_system;
 pub use damage_system::{delete_the_dead, DamageSystem};
 
+mod particle_system;
+
 mod gamelog;
 mod gui;
 pub mod saveload_system;
@@ -75,6 +77,7 @@ impl GameState for State {
         }
 
         ctx.cls();
+        particle_system::cull_dead_particles(&mut self.ecs, ctx);
 
         match newrunstate {
             RunState::MainMenu { .. } => {}
@@ -272,6 +275,7 @@ impl State {
         let mut potion_system = ItemUseSystem {};
         let mut drop_system = ItemDropSystem {};
         let mut remove_system = ItemRemoveSystem {};
+        let mut particle_spawner = particle_system::ParticleSpawnSystem {};
         vis.run_now(&self.ecs);
         mob.run_now(&self.ecs);
         mapindex.run_now(&self.ecs);
@@ -281,6 +285,7 @@ impl State {
         potion_system.run_now(&self.ecs);
         drop_system.run_now(&self.ecs);
         remove_system.run_now(&self.ecs);
+        particle_spawner.run_now(&self.ecs);
         self.ecs.maintain();
     }
 
@@ -451,8 +456,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MeleePowerBonus>();
     gs.ecs.register::<DefenseBonus>();
     gs.ecs.register::<WantsToRemoveItem>();
+    gs.ecs.register::<ParticleLifetime>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<SerializeMe>::new());
+    gs.ecs.insert(particle_system::ParticleBuilder::new());
 
     let map: Map = Map::new_map_rooms_and_corridors(1);
     let (player_x, player_y) = map.rooms[0].center();
